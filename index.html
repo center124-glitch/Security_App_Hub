@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- SBK Hub v6 : เพิ่มแอป 'ระบบค่าปรับ รปภ. A-B-C' (หมวดระบบหลัก & ฐานข้อมูล) -->
+<!-- SBK Hub v7 : เพิ่มแอป 'ระบบค่าปรับ รปภ. A-B-C' (v6) และ 'SBK Daily Log' (v7) -->
 <html lang="th">
 <head>
 <meta charset="utf-8">
@@ -236,6 +236,7 @@ const DEF=[
   ['Form Test Personality','Form-Test-Personality/','📝','แบบทดสอบบุคลิกภาพ'],
   ['Incident / Accident','From-Incident-Accident/','🚨','แจ้งเหตุ / อุบัติเหตุ'],
   ['SBK Break Form','SBK-Break-Form/','☕','บันทึกการพัก'],
+  ['SBK Daily Log','SBK-Daily-Log/','📒','บันทึกประจำวัน'],
   ['SCI Form','SCI_Form/','📋','แบบฟอร์ม SCI'],
   ['Tenant Safety Inspection','Tenant_Safety_Inspection_v2/','🦺','ตรวจความปลอดภัยผู้เช่า'],
   ['Toilet Inspection Form','Toilet-Inspection-Form/','🚻','ตรวจห้องน้ำ'],
@@ -272,17 +273,20 @@ let CATS=[],APPS=[];
 function defaultCfg(){const cats=[],apps=[];let k=0;DEF.forEach(c=>{cats.push({id:c.id,n:c.n,ic:CI[c.id],c:c.c});c.a.forEach(x=>apps.push({name:x[0],url:B+x[1],ic:x[2],ds:x[3],cat:c.id,p:k++%PAL.length}))});return{cats,apps}}
 let CFG=null;try{CFG=JSON.parse(localStorage.getItem('sbkCfg')||'null')}catch(e){}
 if(!CFG||!Array.isArray(CFG.cats)||!Array.isArray(CFG.apps))CFG=defaultCfg();
-/* v6: เพิ่มแอปค่าปรับ A-B-C ให้ค่าที่เคยบันทึกไว้ในเครื่อง (ทำครั้งเดียว ไม่ดึงกลับถ้าลบทิ้งภายหลัง) */
-try{if(!localStorage.getItem('sbkMigFines')){
-  const u=B+'Security_Fines_A-B-C/';
-  if(!CFG.apps.some(x=>x.url===u)&&CFG.cats.some(c=>c.id==='ops')){
-    const at=CFG.apps.findIndex(x=>x.url===B+'Security-Working-Schedule/');
-    const o={name:'ระบบค่าปรับ รปภ. A-B-C',url:u,ic:'🧾',ds:'บันทึก/สรุปยอดปรับ หมวด A-B-C',cat:'ops',p:CFG.apps.length%PAL.length};
+/* v6-v7: เพิ่มแอปใหม่ให้ค่าที่เคยบันทึกไว้ในเครื่อง (ทำครั้งเดียวต่อแอป ไม่ดึงกลับถ้าลบทิ้งภายหลัง) */
+[
+ {flag:'sbkMigFines',after:'Security-Working-Schedule/',cat:'ops',name:'ระบบค่าปรับ รปภ. A-B-C',path:'Security_Fines_A-B-C/',ic:'🧾',ds:'บันทึก/สรุปยอดปรับ หมวด A-B-C'},
+ {flag:'sbkMigDailyLog',after:'SBK-Break-Form/',cat:'form',name:'SBK Daily Log',path:'SBK-Daily-Log/',ic:'📒',ds:'บันทึกประจำวัน'}
+].forEach(m=>{try{if(!localStorage.getItem(m.flag)){
+  const u=B+m.path;
+  if(!CFG.apps.some(x=>x.url===u)&&CFG.cats.some(c=>c.id===m.cat)){
+    const at=CFG.apps.findIndex(x=>x.url===B+m.after);
+    const o={name:m.name,url:u,ic:m.ic,ds:m.ds,cat:m.cat,p:CFG.apps.length%PAL.length};
     if(at>=0)CFG.apps.splice(at+1,0,o);else CFG.apps.push(o);
     localStorage.setItem('sbkCfg',JSON.stringify(CFG));
   }
-  localStorage.setItem('sbkMigFines','1');
-}}catch(e){}
+  localStorage.setItem(m.flag,'1');
+}}catch(e){}});
 function applyCfg(){CATS=CFG.cats;APPS=CFG.apps.map((a,i)=>Object.assign({},a,{c:PAL[(Number.isInteger(a.p)?a.p:i)%PAL.length]}))}
 function saveCfg(){try{localStorage.setItem('sbkCfg',JSON.stringify(CFG))}catch(e){toast('บันทึกการตั้งค่าไม่สำเร็จ (พื้นที่จัดเก็บของเบราว์เซอร์ถูกปิด)',1)}applyCfg()}
 applyCfg();
